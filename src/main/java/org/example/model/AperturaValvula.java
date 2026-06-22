@@ -1,21 +1,19 @@
 package org.example.model;
 
 public enum AperturaValvula {
-    CERRADA(0, "0%"),
-    ABIERTO_33(33, "33%"),
-    ABIERTO_66(66, "66%"),
-    ABIERTO_100(100, "100%");
+    CERRADA(false, "Cerrada"),
+    ABIERTA(true, "Abierta");
 
-    private final int porcentaje;
+    private final boolean abierta;
     private final String etiqueta;
 
-    AperturaValvula(int porcentaje, String etiqueta) {
-        this.porcentaje = porcentaje;
+    AperturaValvula(boolean abierta, String etiqueta) {
+        this.abierta = abierta;
         this.etiqueta = etiqueta;
     }
 
-    public int getPorcentaje() {
-        return porcentaje;
+    public boolean isAbierta() {
+        return abierta;
     }
 
     public String getEtiqueta() {

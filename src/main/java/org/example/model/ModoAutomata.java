@@ -15,4 +15,8 @@ public class ModoAutomata {
     public ModoEstado getEstado() {
         return estado;
     }
+
+    public void reset() {
+        estado = ModoEstado.AUTOMATICO;
+    }
 }

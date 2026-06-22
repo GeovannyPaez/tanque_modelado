@@ -5,6 +5,11 @@ public class SeguridadAutomata {
 
     public SeguridadEstado dispararEvento(EventoSeguridad evento) {
         switch (evento) {
+            case eA:
+                if (estado != SeguridadEstado.EMERGENCIA) {
+                    estado = SeguridadEstado.ADVERTENCIA;
+                }
+                break;
             case eD:
             case eV:
             case eStop:
@@ -21,5 +26,9 @@ public class SeguridadAutomata {
 
     public SeguridadEstado getEstado() {
         return estado;
+    }
+
+    public void reset() {
+        estado = SeguridadEstado.NORMAL;
     }
 }

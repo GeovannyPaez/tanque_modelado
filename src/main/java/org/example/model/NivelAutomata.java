@@ -1,59 +1,51 @@
 package org.example.model;
 
 public class NivelAutomata {
-    private NivelEstado estado = NivelEstado.MEDIO;
+    private int porcentaje = NivelEstado.MEDIO.getPorcentaje();
 
     public NivelEstado dispararEvento(EventoNivel evento) {
         switch (evento) {
             case eEntrada:
-                estado = subir(estado);
+                aplicarCambio(10);
                 break;
             case eSalida:
-                estado = bajar(estado);
+                aplicarCambio(-10);
                 break;
             default:
                 break;
         }
-        return estado;
+        return getEstado();
     }
 
-    private NivelEstado subir(NivelEstado actual) {
-        switch (actual) {
-            case VACIO:
-                return NivelEstado.BAJO;
-            case BAJO:
-                return NivelEstado.MEDIO;
-            case MEDIO:
-                return NivelEstado.ALTO;
-            case ALTO:
-                return NivelEstado.MAXIMO;
-            case MAXIMO:
-                return NivelEstado.DESBORDAMIENTO;
-            case DESBORDAMIENTO:
-            default:
-                return NivelEstado.DESBORDAMIENTO;
-        }
+    public NivelEstado aplicarCambio(int deltaPorcentaje) {
+        porcentaje = Math.max(0, Math.min(110, porcentaje + deltaPorcentaje));
+        return getEstado();
     }
 
-    private NivelEstado bajar(NivelEstado actual) {
-        switch (actual) {
-            case DESBORDAMIENTO:
-                return NivelEstado.MAXIMO;
-            case MAXIMO:
-                return NivelEstado.ALTO;
-            case ALTO:
-                return NivelEstado.MEDIO;
-            case MEDIO:
-                return NivelEstado.BAJO;
-            case BAJO:
-                return NivelEstado.VACIO;
-            case VACIO:
-            default:
-                return NivelEstado.VACIO;
-        }
+    public int getPorcentaje() {
+        return porcentaje;
     }
 
     public NivelEstado getEstado() {
-        return estado;
+        if (porcentaje <= 0) {
+            return NivelEstado.VACIO;
+        }
+        if (porcentaje < 45) {
+            return NivelEstado.BAJO;
+        }
+        if (porcentaje < 75) {
+            return NivelEstado.MEDIO;
+        }
+        if (porcentaje < 100) {
+            return NivelEstado.ALTO;
+        }
+        if (porcentaje == 100) {
+            return NivelEstado.MAXIMO;
+        }
+        return NivelEstado.DESBORDAMIENTO;
+    }
+
+    public void reset() {
+        porcentaje = NivelEstado.MEDIO.getPorcentaje();
     }
 }
