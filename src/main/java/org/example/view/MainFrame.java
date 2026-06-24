@@ -35,7 +35,8 @@ public class MainFrame extends JFrame {
     private final JLabel nivelLabel = new JLabel("Nivel: MEDIO");
     private final JLabel modoLabel = new JLabel("Modo: AUTOMATICO");
     private final JLabel seguridadLabel = new JLabel("Seguridad: NORMAL");
-    private final JLabel valvulaLabel = new JLabel("Valvula: Cerrada");
+    private final JLabel valvulaLabel = new JLabel("Valvula control: Cerrada");
+    private final JLabel valvulaSeguridadLabel = new JLabel("Valvula seguridad: Abierta");
     private final JLabel setPointLabel = new JLabel("Set Point: 60%");
     private final JLabel consumoLabel = new JLabel("Consumo: ACTIVO");
     private final JLabel alturaTanqueLabel = new JLabel("Altura tanque: 5.00 m");
@@ -120,7 +121,7 @@ public class MainFrame extends JFrame {
         JPanel panel = new JPanel(new GridLayout(0, 1, 8, 8));
         panel.setPreferredSize(new Dimension(240, 0));
         panel.setBorder(BorderFactory.createTitledBorder("Indicadores de Estado"));
-        JLabel[] labels = {nivelLabel, nivelMetrosLabel, alturaTanqueLabel, modoLabel, seguridadLabel, valvulaLabel, setPointLabel, consumoLabel, tiempoLabel, simulacionLabel};
+        JLabel[] labels = {nivelLabel, nivelMetrosLabel, alturaTanqueLabel, modoLabel, seguridadLabel, valvulaLabel, valvulaSeguridadLabel, setPointLabel, consumoLabel, tiempoLabel, simulacionLabel};
         for (JLabel label : labels) {
             label.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 15));
             panel.add(label);
@@ -207,18 +208,20 @@ public class MainFrame extends JFrame {
         ModoEstado modo = estado.getModo();
         SeguridadEstado seguridad = estado.getSeguridad();
         AperturaValvula valvula = estado.getValvula();
+        AperturaValvula valvulaSeguridad = estado.getValvulaSeguridad();
 
         nivelLabel.setText("Nivel: " + nivel.name() + " (" + estado.getNivelPorcentaje() + "%)");
         nivelMetrosLabel.setText(String.format("Nivel actual: %.2f m", estado.getNivelActualMetros()));
         alturaTanqueLabel.setText(String.format("Altura tanque: %.2f m", estado.getAlturaMaximaMetros()));
         modoLabel.setText("Modo: " + modo.name());
         seguridadLabel.setText("Seguridad: " + seguridad.name());
-        valvulaLabel.setText("Valvula: " + valvula.getEtiqueta());
+        valvulaLabel.setText("Valvula control: " + valvula.getEtiqueta());
+        valvulaSeguridadLabel.setText("Valvula seguridad: " + valvulaSeguridad.getEtiqueta());
         setPointLabel.setText("Set Point: " + estado.getSetPoint() + "%");
         consumoLabel.setText("Consumo: " + (estado.isConsumoActivo() ? "ACTIVO" : "INACTIVO"));
         tiempoLabel.setText("Tiempo: " + estado.getTick() + " ticks");
         simulacionLabel.setText("Simulacion: " + (estado.isSimulando() ? "EN EJECUCION" : "PAUSADA"));
-        tankPanel.actualizar(nivel, estado.getNivelPorcentaje(), estado.getNivelActualMetros(), estado.getAlturaMaximaMetros(), seguridad, valvula, estado.getSetPoint());
+        tankPanel.actualizar(nivel, estado.getNivelPorcentaje(), estado.getNivelActualMetros(), estado.getAlturaMaximaMetros(), seguridad, valvula, valvulaSeguridad, estado.getSetPoint());
 
         if (estado.getTick() != ultimoTickGraficado) {
             chartPanel.addSample(estado.getTick(), estado.getNivelPorcentaje());
@@ -309,7 +312,7 @@ public class MainFrame extends JFrame {
         avisoEmergenciaMostrado = true;
         JOptionPane.showMessageDialog(
                 this,
-                "El nivel del tanque alcanzó la altura máxima permitida. Se cerró la válvula de entrada.",
+                "El nivel del tanque alcanzó la altura máxima permitida. Se cerró la válvula de seguridad independiente.",
                 "Emergencia de seguridad",
                 JOptionPane.WARNING_MESSAGE
         );

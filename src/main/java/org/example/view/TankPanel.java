@@ -23,6 +23,7 @@ public class TankPanel extends JPanel {
     private double alturaMaximaMetros = 5.0;
     private SeguridadEstado seguridad = SeguridadEstado.NORMAL;
     private AperturaValvula valvula = AperturaValvula.CERRADA;
+    private AperturaValvula valvulaSeguridad = AperturaValvula.ABIERTA;
     private int setPoint = NivelEstado.MEDIO.getPorcentaje();
     private double porcentajeVisual = NivelEstado.MEDIO.getPorcentaje();
     private double porcentajeObjetivo = NivelEstado.MEDIO.getPorcentaje();
@@ -34,13 +35,14 @@ public class TankPanel extends JPanel {
         animTimer.start();
     }
 
-    public void actualizar(NivelEstado nivel, int nivelPorcentaje, double nivelActualMetros, double alturaMaximaMetros, SeguridadEstado seguridad, AperturaValvula valvula, int setPoint) {
+    public void actualizar(NivelEstado nivel, int nivelPorcentaje, double nivelActualMetros, double alturaMaximaMetros, SeguridadEstado seguridad, AperturaValvula valvula, AperturaValvula valvulaSeguridad, int setPoint) {
         this.nivel = nivel;
         this.nivelPorcentaje = nivelPorcentaje;
         this.nivelActualMetros = nivelActualMetros;
         this.alturaMaximaMetros = alturaMaximaMetros;
         this.seguridad = seguridad;
         this.valvula = valvula;
+        this.valvulaSeguridad = valvulaSeguridad;
         this.setPoint = setPoint;
         this.porcentajeObjetivo = nivelPorcentaje;
     }
@@ -73,7 +75,6 @@ public class TankPanel extends JPanel {
         drawTank(g2, tankX, tankY, tankW, tankH);
         drawLevelTransmitter(g2, tankX, tankY, tankW, tankH);
         drawController(g2, tankX, tankY, tankW);
-        drawNumericLevel(g2, tankX, tankY, tankW);
         drawStatusCard(g2, tankX, tankY);
         g2.dispose();
     }
@@ -100,7 +101,7 @@ public class TankPanel extends JPanel {
                 : seguridad == SeguridadEstado.ADVERTENCIA ? new Color(254, 243, 199) : new Color(243, 244, 246);
 
         int pipeY = tankY + 34;
-        int valveX = tankX - 44;
+        int safetyValveX = tankX - 98;
         int sensorX = tankX + tankW + 52;
         int sensorY = tankY + 34;
         int sisX = tankX + tankW + 212;
@@ -128,8 +129,8 @@ public class TankPanel extends JPanel {
 
         g2.setStroke(new BasicStroke(2f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 1f, new float[]{6f, 4f}, 0f));
         drawArrow(g2, sensorX + 24, sensorY, sisX, sensorY);
-        drawElbowArrow(g2, sisX + 39, sisY, sisX + 39, safetyLaneY, valveX - 20, safetyLaneY);
-        drawArrow(g2, valveX - 20, safetyLaneY, valveX, pipeY - 18);
+        drawElbowArrow(g2, sisX + 39, sisY, sisX + 39, safetyLaneY, safetyValveX - 18, safetyLaneY);
+        drawArrow(g2, safetyValveX - 18, safetyLaneY, safetyValveX, pipeY - 18);
 
         drawTextBadge(g2, "Lazo de Seguridad", sisX - 8, sisY - 22, new Color(245, 247, 250), loopColor);
     }
@@ -137,21 +138,30 @@ public class TankPanel extends JPanel {
     private void drawInlet(Graphics2D g2, int tankX, int tankY) {
         int pipeY = tankY + 34;
         g2.setStroke(new BasicStroke(8f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-        g2.setColor(new Color(125, 211, 252));
-        g2.drawLine(tankX - 92, pipeY, tankX, pipeY);
+        boolean flujoActivo = valvula.isAbierta() && valvulaSeguridad.isAbierta();
+        g2.setColor(flujoActivo ? new Color(125, 211, 252) : new Color(148, 163, 184));
+        g2.drawLine(tankX - 146, pipeY, tankX, pipeY);
 
-        boolean abierta = valvula.isAbierta() && seguridad == SeguridadEstado.NORMAL;
-        g2.setStroke(new BasicStroke(2f));
-        g2.setColor(abierta ? new Color(57, 255, 20) : new Color(107, 114, 128));
-        Polygon left = new Polygon(new int[]{tankX - 44, tankX - 62, tankX - 62}, new int[]{pipeY, pipeY - 12, pipeY + 12}, 3);
-        Polygon right = new Polygon(new int[]{tankX - 44, tankX - 26, tankX - 26}, new int[]{pipeY, pipeY - 12, pipeY + 12}, 3);
-        g2.fillPolygon(left);
-        g2.fillPolygon(right);
-        g2.drawLine(tankX - 44, pipeY - 18, tankX - 44, pipeY - 6);
+        drawValve(g2, tankX - 98, pipeY, valvulaSeguridad.isAbierta(), "ESD");
+        drawValve(g2, tankX - 44, pipeY, valvula.isAbierta(), "CV");
 
         g2.setFont(g2.getFont().deriveFont(Font.BOLD, 11f));
         g2.setColor(new Color(31, 41, 55));
-        drawTextBadge(g2, abierta ? "Valvula Abierta" : "Valvula Cerrada", tankX - 86, pipeY + 34, new Color(245, 247, 250), new Color(31, 41, 55));
+        drawTextBadge(g2, "Seguridad " + valvulaSeguridad.getEtiqueta(), tankX - 142, pipeY + 34, new Color(245, 247, 250), new Color(31, 41, 55));
+        drawTextBadge(g2, "Control " + valvula.getEtiqueta(), tankX - 78, pipeY + 52, new Color(245, 247, 250), new Color(31, 41, 55));
+    }
+
+    private void drawValve(Graphics2D g2, int centerX, int pipeY, boolean abierta, String tag) {
+        g2.setStroke(new BasicStroke(2f));
+        g2.setColor(abierta ? new Color(57, 255, 20) : new Color(107, 114, 128));
+        Polygon left = new Polygon(new int[]{centerX, centerX - 18, centerX - 18}, new int[]{pipeY, pipeY - 12, pipeY + 12}, 3);
+        Polygon right = new Polygon(new int[]{centerX, centerX + 18, centerX + 18}, new int[]{pipeY, pipeY - 12, pipeY + 12}, 3);
+        g2.fillPolygon(left);
+        g2.fillPolygon(right);
+        g2.drawLine(centerX, pipeY - 18, centerX, pipeY - 6);
+        g2.setFont(g2.getFont().deriveFont(Font.BOLD, 10f));
+        g2.setColor(new Color(15, 23, 42));
+        drawCenteredString(g2, tag, centerX, pipeY - 24);
     }
 
     private void drawOutlet(Graphics2D g2, int tankX, int tankY, int tankW, int tankH) {
@@ -229,22 +239,6 @@ public class TankPanel extends JPanel {
         g2.drawRect(lcX + 48, y - 14, 98, 28);
         g2.setFont(g2.getFont().deriveFont(Font.BOLD, 11f));
         g2.drawString("SP = " + setPoint + "%", lcX + 62, y + 4);
-    }
-
-    private void drawNumericLevel(Graphics2D g2, int tankX, int tankY, int tankW) {
-        int x = tankX + tankW + 84;
-        int y = tankY + 72;
-        g2.setFont(g2.getFont().deriveFont(Font.BOLD, 11f));
-        g2.setColor(new Color(31, 41, 55));
-        g2.drawString("NIVEL NUMERICO", x, y);
-        g2.setColor(new Color(186, 230, 253));
-        g2.fillRect(x + 8, y + 12, 76, 26);
-        g2.setColor(new Color(14, 116, 144));
-        g2.drawRect(x + 8, y + 12, 76, 26);
-        g2.setFont(g2.getFont().deriveFont(Font.BOLD, 12f));
-        g2.drawString(Math.round(porcentajeVisual) + " %", x + 25, y + 30);
-        g2.setColor(new Color(31, 41, 55));
-        g2.drawString(String.format("%.2f m", nivelActualMetros), x + 22, y + 56);
     }
 
     private void drawStatusCard(Graphics2D g2, int tankX, int tankY) {

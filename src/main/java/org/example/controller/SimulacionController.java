@@ -26,12 +26,14 @@ public class SimulacionController {
 
     private AperturaValvula aperturaActual = AperturaValvula.CERRADA;
     private AperturaValvula aperturaManualSeleccionada = AperturaValvula.CERRADA;
+    private AperturaValvula valvulaSeguridad = AperturaValvula.ABIERTA;
     private int setPoint = NivelEstado.MEDIO.getPorcentaje();
     private double alturaMaximaMetros = 5.0;
     private boolean actualizandoSetPointDesdeControlador = false;
     private boolean actualizandoAlturaDesdeControlador = false;
     private boolean llenandoAutomatico = false;
     private boolean fallaAutomaticaActiva = false;
+    private boolean valvulaControlAtascadaAbierta = false;
     private boolean eventoSeguridadAutomaticoActivado = false;
     private boolean emergenciaPorAlturaMaxima = false;
     private boolean consumoActivo = true;
@@ -87,7 +89,10 @@ public class SimulacionController {
 
         view.getEmergenciaBtn().addActionListener(e -> {
             SeguridadEstado estado = seguridadAutomata.dispararEvento(EventoSeguridad.eStop);
-            aperturaActual = AperturaValvula.CERRADA;
+            valvulaSeguridad = AperturaValvula.CERRADA;
+            if (!valvulaControlAtascadaAbierta) {
+                aperturaActual = AperturaValvula.CERRADA;
+            }
             fallaAutomaticaActiva = false;
             eventoSeguridadAutomaticoActivado = false;
             emergenciaPorAlturaMaxima = false;
@@ -97,6 +102,7 @@ public class SimulacionController {
 
         view.getResetBtn().addActionListener(e -> {
             SeguridadEstado estado = seguridadAutomata.dispararEvento(EventoSeguridad.reset);
+            valvulaSeguridad = AperturaValvula.ABIERTA;
             eventoSeguridadAutomaticoActivado = false;
             emergenciaPorAlturaMaxima = false;
             logEvento("reset", estado.name());
@@ -110,10 +116,12 @@ public class SimulacionController {
         seguridadAutomata.reset();
         aperturaActual = AperturaValvula.CERRADA;
         aperturaManualSeleccionada = AperturaValvula.CERRADA;
+        valvulaSeguridad = AperturaValvula.ABIERTA;
         setPoint = NivelEstado.MEDIO.getPorcentaje();
         alturaMaximaMetros = 5.0;
         llenandoAutomatico = false;
         fallaAutomaticaActiva = false;
+        valvulaControlAtascadaAbierta = false;
         eventoSeguridadAutomaticoActivado = false;
         emergenciaPorAlturaMaxima = false;
         consumoActivo = true;
@@ -136,10 +144,11 @@ public class SimulacionController {
         }
 
         fallaAutomaticaActiva = true;
+        valvulaControlAtascadaAbierta = true;
         eventoSeguridadAutomaticoActivado = false;
         llenandoAutomatico = true;
         aperturaActual = AperturaValvula.ABIERTA;
-        log("Falla simulada: válvula atascada abierta");
+        log("Falla simulada: válvula de control atascada abierta");
         renderizar();
     }
 
@@ -205,7 +214,7 @@ public class SimulacionController {
             return;
         }
 
-        if (modoAutomata.getEstado() == ModoEstado.AUTOMATICO && fallaAutomaticaActiva) {
+        if (valvulaControlAtascadaAbierta) {
             aperturaActual = AperturaValvula.ABIERTA;
         } else if (modoAutomata.getEstado() == ModoEstado.AUTOMATICO) {
             aperturaActual = decidirAperturaAutomatica(nivelAutomata.getPorcentaje(), setPoint);
@@ -215,19 +224,19 @@ public class SimulacionController {
 
         NivelEstado previo = nivelAutomata.getEstado();
         int consumo = consumoActivo ? CONSUMO_POR_TICK : 0;
-        int cambioNeto = flujoEntrada(aperturaActual) - consumo;
+        int cambioNeto = flujoEntrada(aperturaActual, valvulaSeguridad) - consumo;
         NivelEstado nuevo = nivelAutomata.aplicarCambio(cambioNeto);
         log("flujo neto " + cambioNeto + "% -> nivel " + nivelAutomata.getPorcentaje() + "% (" + nuevo.name() + ")");
         evaluarFallaAutomaticaPorNivel();
         if (seguridadAutomata.getEstado() == SeguridadEstado.EMERGENCIA) {
-            aperturaActual = AperturaValvula.CERRADA;
+            valvulaSeguridad = AperturaValvula.CERRADA;
             renderizar();
             return;
         }
         evaluarSeguridadPorNivel(previo, nuevo);
 
         if (seguridadAutomata.getEstado() == SeguridadEstado.EMERGENCIA) {
-            aperturaActual = AperturaValvula.CERRADA;
+            valvulaSeguridad = AperturaValvula.CERRADA;
             renderizar();
             return;
         }
@@ -251,8 +260,8 @@ public class SimulacionController {
         return AperturaValvula.ABIERTA;
     }
 
-    private int flujoEntrada(AperturaValvula apertura) {
-        return apertura.isAbierta() ? 8 : 0;
+    private int flujoEntrada(AperturaValvula aperturaControl, AperturaValvula aperturaSeguridad) {
+        return aperturaControl.isAbierta() && aperturaSeguridad.isAbierta() ? 8 : 0;
     }
 
     private void evaluarSeguridadPorNivel(NivelEstado previo, NivelEstado actual) {
@@ -265,11 +274,11 @@ public class SimulacionController {
         } else if (previo != NivelEstado.VACIO && actual == NivelEstado.VACIO) {
             SeguridadEstado estado = seguridadAutomata.dispararEvento(EventoSeguridad.eV);
             logEvento("eV", estado.name());
-            aperturaActual = AperturaValvula.CERRADA;
+            valvulaSeguridad = AperturaValvula.CERRADA;
         } else if (previo != NivelEstado.DESBORDAMIENTO && actual == NivelEstado.DESBORDAMIENTO) {
             SeguridadEstado estado = seguridadAutomata.dispararEvento(EventoSeguridad.eD);
             logEvento("eD", estado.name());
-            aperturaActual = AperturaValvula.CERRADA;
+            valvulaSeguridad = AperturaValvula.CERRADA;
         }
     }
 
@@ -292,7 +301,7 @@ public class SimulacionController {
         eventoSeguridadAutomaticoActivado = true;
         timer.stop();
         logEvento("Evento automático de seguridad activado", estado.name());
-        log("alarma activada: nivel al 100%, válvula cerrada y llenado detenido");
+        log("alarma activada: nivel al 100%, válvula de seguridad cerrada y llenado detenido");
     }
 
     private void activarEmergenciaPorAlturaMaxima() {
@@ -301,12 +310,15 @@ public class SimulacionController {
         }
 
         actualizarSeguridad(EventoSeguridad.eD, "EMERGENCIA: RIESGO DE DESBORDAMIENTO");
-        aperturaActual = AperturaValvula.CERRADA;
+        valvulaSeguridad = AperturaValvula.CERRADA;
+        if (!valvulaControlAtascadaAbierta) {
+            aperturaActual = AperturaValvula.CERRADA;
+        }
         llenandoAutomatico = false;
         fallaAutomaticaActiva = false;
         emergenciaPorAlturaMaxima = true;
         timer.stop();
-        log("alarma activada: nivel al 100%, válvula cerrada y llenado detenido");
+        log("alarma activada: nivel al 100%, válvula de seguridad cerrada y llenado detenido");
     }
 
     private void actualizarSeguridad(EventoSeguridad evento, String descripcion) {
@@ -332,6 +344,7 @@ public class SimulacionController {
                 modoAutomata.getEstado(),
                 seguridadAutomata.getEstado(),
                 aperturaActual,
+                valvulaSeguridad,
                 tick,
                 timer.isRunning(),
                 setPoint,

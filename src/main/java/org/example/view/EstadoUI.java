@@ -11,6 +11,7 @@ public class EstadoUI {
     private final ModoEstado modo;
     private final SeguridadEstado seguridad;
     private final AperturaValvula valvula;
+    private final AperturaValvula valvulaSeguridad;
     private final long tick;
     private final boolean simulando;
     private final int setPoint;
@@ -21,12 +22,13 @@ public class EstadoUI {
     private final boolean eventoSeguridadAutomaticoActivado;
     private final boolean emergenciaPorAlturaMaxima;
 
-    public EstadoUI(NivelEstado nivel, int nivelPorcentaje, ModoEstado modo, SeguridadEstado seguridad, AperturaValvula valvula, long tick, boolean simulando, int setPoint, boolean consumoActivo, double alturaMaximaMetros, double nivelActualMetros, boolean fallaAutomaticaActiva, boolean eventoSeguridadAutomaticoActivado, boolean emergenciaPorAlturaMaxima) {
+    public EstadoUI(NivelEstado nivel, int nivelPorcentaje, ModoEstado modo, SeguridadEstado seguridad, AperturaValvula valvula, AperturaValvula valvulaSeguridad, long tick, boolean simulando, int setPoint, boolean consumoActivo, double alturaMaximaMetros, double nivelActualMetros, boolean fallaAutomaticaActiva, boolean eventoSeguridadAutomaticoActivado, boolean emergenciaPorAlturaMaxima) {
         this.nivel = nivel;
         this.nivelPorcentaje = nivelPorcentaje;
         this.modo = modo;
         this.seguridad = seguridad;
         this.valvula = valvula;
+        this.valvulaSeguridad = valvulaSeguridad;
         this.tick = tick;
         this.simulando = simulando;
         this.setPoint = setPoint;
@@ -56,6 +58,10 @@ public class EstadoUI {
 
     public AperturaValvula getValvula() {
         return valvula;
+    }
+
+    public AperturaValvula getValvulaSeguridad() {
+        return valvulaSeguridad;
     }
 
     public long getTick() {
