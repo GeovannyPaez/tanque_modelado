@@ -1,0 +1,17 @@
+INSTRUCCIONES PARA ABRIR MODELO TANQUE
+
+1. No abras ModeladoTanque.exe directamente desde el archivo .zip.
+
+2. Primero haz clic derecho sobre ModeladoTanque-Windows.zip y selecciona:
+   "Extraer todo..."
+
+3. Entra a la carpeta extraida:
+   ModeladoTanque
+
+4. Abre:
+   ModeladoTanque.exe
+
+Importante:
+El ejecutable necesita las carpetas "app" y "runtime" que vienen al lado.
+Si se abre el .exe sin extraer el .zip completo, Windows lo ejecuta desde una
+carpeta temporal y aparece un error indicando que falta ModeladoTanque.cfg.
